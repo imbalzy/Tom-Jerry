@@ -11,8 +11,8 @@ class Robot:
     SENSOR_NOISE_COEF = 0 # was 0.1
     ANG_VEL_COEF = np.pi / 2
     LIN_VEL_COEF = 1
-    VIEW_DIST = 5
-    NUM_DISTS = 5
+    VIEW_DIST = 2
+    NUM_DISTS = 2
     THETALIST = [0, np.pi / 2, np.pi, 3 / 2 * np.pi]
     # Initializer / Instance Attributes
     # Sets initializes robot pose and properties
