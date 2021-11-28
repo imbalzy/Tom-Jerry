@@ -53,7 +53,7 @@ class Map:
     def haveCollided(self):
         for p in self.r_p:
             dist = self.getDist(p.pose, self.r_e.pose)
-            if dist <= 1.5:
+            if dist <= 0:
                 return True
         return False
 
