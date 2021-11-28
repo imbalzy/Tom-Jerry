@@ -106,8 +106,10 @@ class TurtleBotTag(gym.Env):
                                                 loss_func=self._huber_loss)
         self.q_memory = deque(maxlen=2000)
         self.e_memory = deque(maxlen=2000)
-        self.gamma = .9
-        self.epsilon = 1.1
+        self.gamma = .95
+        self.epsilon = 1.0
+        self.epsilon_decay = 0.9999
+        self.epsilon_min = 0.01
 
         # Reset Initial Conditions
         self.reset()
