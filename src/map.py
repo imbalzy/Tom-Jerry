@@ -13,13 +13,14 @@ class Map:
 
     # Initializer / Instance Attributes
     # Creates grid
-    def __init__(self):
+    def __init__(self, p_num):
         self.grid = np.zeros(self.grid_sz)
         for i in range(self.grid_sz[0]//4):
             for j in range(self.grid_sz[1]//4):
                 self.grid[(i*4):(i*4)+2, (j*4):(j*4)+2] = np.ones((2, 2))
 
-        self.r_p = Robot((0, 0, 0), self.fov)
+        self.p_num = p_num
+        self.r_p = [Robot((0, 0, 0), self.fov) for _ in range(p_num)]
         self.r_e = Robot((0, 0, 0), self.fov)
 
     # Checks if input is in an open space in Map
@@ -35,17 +36,29 @@ class Map:
             return True
 
     def pursuerScanner(self):
-        return self.r_p.senseRobot(self.r_e.pose)
+        # 0 stands for sensing the e; 1 stands for not
+        # as far as one can sense, the whole can sense.
+        return sum([p.senseRobot(self.r_e.pose) for p in self.r_p])
 
     def evaderScanner(self):
-        return self.r_e.senseRobot(self.r_p.pose)
+        # return the sensed p positions
+        ret = [0 for _ in range(self.p_num*3)]
+        sense_num = 0
+        for p in self.r_p:
+            if self.r_e.senseRobot(p.pose):
+                ret[sense_num*3:(sense_num+1)*3] = p.pose
+                sense_num += 1
+        return ret
 
     def haveCollided(self):
-        dist = np.sqrt(np.square(self.r_p.pose[0]-self.r_e.pose[0]) + np.square(self.r_p.pose[1]-self.r_e.pose[1]))
-        if dist <= 1.5:
-            return True
-        else:
-            return False
+        for p in self.r_p:
+            dist = self.getDist(p.pose, self.r_e.pose)
+            if dist <= 1.5:
+                return True
+        return False
+
+    def getDist(self, pose1, pose2):
+        return np.sqrt(np.square(pose1[0]-pose2[0]) + np.square(pose1[1]-pose2[1]))
 
     def checkForObstacle(self, x, y):
         x = int(x)

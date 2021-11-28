@@ -5,7 +5,6 @@ THETALIST = [0, np.pi/2, np.pi, 3/2*np.pi]
 
 
 class Robot:
-
     # Class Attribute
     # pose (x, y, orientation)
     # fov - field of view in radians
@@ -21,16 +20,9 @@ class Robot:
         self.pose = init_pose
         self.fov = fov
 
-    # #Tries move and returns true if it is valid, Else, False
-    # def tryMove(self, vel):
-    #     pass
-
     # Moves
     # vel = [linear, rotation]
     def move(self, vel, map):
-        #print("Current Pose: ", self.pose)
-        #print("Current Action: ", vel)
-
         # convert from state space to actual values
         curr_theta = THETALIST[self.pose[2]]
 
@@ -38,7 +30,6 @@ class Robot:
         new_y = self.pose[1] + vel[0] * np.sin(curr_theta) * self.LIN_VEL_COEF
         new_or = (self.pose[2] + vel[1]) % 4
         new_theta = THETALIST[new_or]
-        #new_or = (self.pose[2] + vel[1] * self.ANG_VEL_COEF) % 4
 
         if vel[1] != 0:
             new_x = new_x + vel[0] * np.cos(new_theta) * self.LIN_VEL_COEF
@@ -50,31 +41,21 @@ class Robot:
         new_or = int(np.rint(new_or))
 
         if map.checkForObstacle(new_x, new_y):
-            #print("Hitting wall, New Pose: ", self.pose)
             return self.pose
         else:
             self.pose = (new_x, new_y, new_or)
-            #print("Not hitting wall, New Pose: ", self.pose)
             return self.pose
-    #
-    # #Sets Robot vel for moving
-    #
-    # def setVel(self, vel):
-    #     self.vel = vel
 
-
-    #returns cell indicies for where robot is located
+    # returns cell indicies for where robot is located
     def inCell(self):
         return (self.pose[1]//1, self.pose[0]//1)
-
 
     def senseRobot(self, other_pose):
         dist = np.sqrt(np.square(self.pose[0]-other_pose[0]) + np.square(self.pose[1]-other_pose[1]))
         ang =  np.arctan2(other_pose[1]-self.pose[1], other_pose[0]-self.pose[0])
 
         if np.abs(ang - self.pose[2]) > self.fov/2:
-            return 1
-            #return self.NUM_DISTS+1
+            return 0
 
         reading = np.round((dist + dist * random.gauss(0,1) * self.SENSOR_NOISE_COEF)/(self.VIEW_DIST/self.NUM_DISTS))
         if reading < 0:
@@ -84,8 +65,6 @@ class Robot:
 
         #return reading
         if reading < self.NUM_DISTS+1:
-            return 0
-        else:
             return 1
-
-#10 substeps
+        else:
+            return 0
