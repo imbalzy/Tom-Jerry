@@ -153,8 +153,8 @@ class TurtleBotTag(gym.Env):
     def act(self, q_state, e_state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.q_action_dim), random.randrange(self.e_action_dim)
-        q_action_values = self.q_model.predict([q_state])
-        e_action_values = self.e_model.predict([e_state])
+        q_action_values = self.q_model.predict(np.expand_dims(np.asarray(q_state), axis=0))
+        e_action_values = self.e_model.predict(np.expand_dims(np.asarray(e_state), axis=0))
         return np.argmax(q_action_values[0]), np.argmax(e_action_values[0])
 
     def replay(self, batch_size, role):
