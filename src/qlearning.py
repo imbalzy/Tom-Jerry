@@ -225,12 +225,14 @@ class TurtleBotTag(gym.Env):
 
         p_observation = self.map.pursuerScanner()  # 0 is get; 1 is not
         e_observation = self.map.evaderScanner()  # [p1, p2, p3]
+        self.p_observation = p_observation
+        self.e_observation = e_observation
 
-        if self.p_observation > 0:
+        if p_observation > 0:
             p_state = tuple(p_poses + list(e_pose))
         else:
             p_state = tuple(p_poses + [0, 0, 0])
-        e_state = tuple(self.e_observation + list(e_pose))
+        e_state = tuple(e_observation + list(e_pose))
 
         done = self.map.haveCollided()
 
