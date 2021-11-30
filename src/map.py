@@ -1,5 +1,6 @@
 import numpy as np
 from robot import Robot
+from collections import deque
 
 
 class Map:
@@ -22,6 +23,31 @@ class Map:
         self.p_num = p_num
         self.r_p = [Robot((0, 0, 0), self.fov) for _ in range(p_num)]
         self.r_e = Robot((0, 0, 0), self.fov)
+        print('start build distance')
+        self.buildDistance()
+        print('finish build distance')
+
+    def buildDistance(self):
+        self.dist = {}
+        for i in range(self.grid_sz[0]):
+            for j in range(self.grid_sz[1]):
+                self.bfs(i, j)
+
+    def bfs(self, starti, startj):
+        distance = {}
+        q = deque([(starti, startj, 0)])
+        seen = set()
+        seen.add((starti, startj))
+        while q:
+            curi, curj, curDis = q.popleft()
+            distance[(curi, curj)] = curDis
+            d = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+            for di, dj in d:
+                newi, newj, newDis = curi + di, curj + dj, curDis + 1
+                if self.validSpace((newi, newj)) and (newi, newj) not in seen:
+                    q.append((newi, newj, newDis))
+                    seen.add((newi, newj))
+        self.dist[(starti, startj)] = distance
 
     # Checks if input is in an open space in Map
     def validSpace(self, pose):
@@ -53,7 +79,7 @@ class Map:
     def haveCollided(self):
         for p in self.r_p:
             dist = self.getDist(p.pose, self.r_e.pose)
-            if dist <= 0:
+            if dist <= 1:
                 return True
         return False
 
