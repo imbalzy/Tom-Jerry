@@ -15,18 +15,15 @@ def main():
     iterations = 100
 
     # 1. Load Environment and Q-table structure
-    env = TurtleBotTag()
+    env = TurtleBotTag(p_num=2)
 
     parent_dir = os.getcwd()
     directory1 = "../results/"
     dir_name = os.path.join(parent_dir, directory1)
-    folder = '04_May_2020_05_12_00'
-    Q_p = np.load(dir_name + folder + "/bestPolicyQTableP.npy")
-    Q_e = np.load(dir_name + folder + "/bestPolicyQTableE.npy")
+    folder = '29_Nov_2021_04_29_10'
+    env.load(dir_name + folder + "/p_model_epi190000", dir_name + folder + "/e_model_epi190000")
 
     # 2. Parameters of Q-leanring
-    eta = .01
-    gma = .9
     step_num = 250
     epis = 2
     rev_list_p = [] # rewards per episode calculate
@@ -42,9 +39,10 @@ def main():
         s_p, s_e = env.reset()
         rAll_p = 0
         rAll_e = 0
-        d = False
         j = 0
         env.epis = i
+
+        env.epsilon = 0
         # The Q-Table learning algorithm
         while j < step_num:
             env.step_num = j
@@ -52,8 +50,8 @@ def main():
             j += 1
 
             # Choose best action from Q table
-            a_p = np.argmax(Q_p[s_p])
-            a_e = np.argmax(Q_e[s_e])
+            a_p, a_e = env.act(s_p, s_e)
+            print(a_p, a_e)
 
             s1_p, s1_e, r_p, r_e, d = env.step(a_p, a_e)
 
@@ -62,7 +60,7 @@ def main():
             s_p = s1_p
             s_e = s1_e
 
-            if d == True:
+            if d:
                 break
 
         rev_list_p.append(rAll_p)
@@ -70,24 +68,24 @@ def main():
         steps_list.append(j)
         env.render()
 
-    print("Pursuer Reward Sum on all episodes " + str(sum(rev_list_p)/epis))
-    print("Evader Reward Sum on all episodes " + str(sum(rev_list_e)/epis))
-    print("Pursuer Final Values Q-Table:\n", Q_p)
-    print("Evader Final Values Q-Table:\n", Q_e)
-
-    fname = env.dir_name
-    fP = open(fname + "bestPolicyStats.txt", "w+")
-    fP.write('Running Policy From: ' + folder + "\n" )
-    fP.write("Pursuer Final Values Q-Table:\n")
-    fP.write("eta = " + str(eta) + "\n")
-    fP.write("gma = " + str(gma) + "\n")
-    fP.write("step_num = " + str(step_num) + "\n")
-    fP.write("epis = " + str(epis) + "\n")
-    fP.close()
-
-    np.savetxt(fname + "RevListP.txt", rev_list_p)
-    np.savetxt(fname + "RevListE.txt", rev_list_e)
-    np.savetxt(fname + "StepsList.txt", steps_list)
+    # print("Pursuer Reward Sum on all episodes " + str(sum(rev_list_p)/epis))
+    # print("Evader Reward Sum on all episodes " + str(sum(rev_list_e)/epis))
+    # print("Pursuer Final Values Q-Table:\n", Q_p)
+    # print("Evader Final Values Q-Table:\n", Q_e)
+    #
+    # fname = env.dir_name
+    # fP = open(fname + "bestPolicyStats.txt", "w+")
+    # fP.write('Running Policy From: ' + folder + "\n" )
+    # fP.write("Pursuer Final Values Q-Table:\n")
+    # fP.write("eta = " + str(eta) + "\n")
+    # fP.write("gma = " + str(gma) + "\n")
+    # fP.write("step_num = " + str(step_num) + "\n")
+    # fP.write("epis = " + str(epis) + "\n")
+    # fP.close()
+    #
+    # np.savetxt(fname + "RevListP.txt", rev_list_p)
+    # np.savetxt(fname + "RevListE.txt", rev_list_e)
+    # np.savetxt(fname + "StepsList.txt", steps_list)
 
     '''
     fname = env.dir_name
