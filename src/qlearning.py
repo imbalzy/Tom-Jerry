@@ -76,7 +76,10 @@ class TurtleBotTag(gym.Env):
 
         # self.observation_space = spaces.Box(low=0, high=width, shape=
         #                (HEIGHT, WIDTH), dtype=np.uint8)
-
+        self.gamma = .95
+        self.epsilon = 1.0
+        self.epsilon_decay = 0.9999
+        self.epsilon_min = 0.01
         # Reset Initial Conditions
         self.reset()
 

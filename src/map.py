@@ -4,7 +4,7 @@ from robot import Robot
 class Map:
 
     # Class Attribute
-    grid_sz = (20, 20)
+    grid_sz = (8, 8)
     fov = np.pi
     #grid
     #r_p # pursuer robot object
@@ -14,9 +14,9 @@ class Map:
     # Creates grid
     def __init__(self):
         self.grid = np.zeros(self.grid_sz)
-        for i in range(self.grid_sz[0]//10):
-            for j in range(self.grid_sz[1]//10):
-                self.grid[(i*10):(i*10)+5, (j*10):(j*10)+5] = np.ones((5,5))
+        for i in range(self.grid_sz[0]//4):
+            for j in range(self.grid_sz[1]//4):
+                self.grid[(i*4):(i*4)+2, (j*4):(j*4)+2] = np.ones((2, 2))
 
         self.r_p = Robot((0,0,0), self.fov)
         self.r_e = Robot((0,0,0), self.fov)

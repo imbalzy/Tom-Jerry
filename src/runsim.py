@@ -49,11 +49,11 @@ def main():
         s_p, s_e = env.reset()
         rAll_p = 0
         rAll_e = 0
+        if i != 0 and env.epsilon > env.epsilon_min:
+                env.epsilon *= env.epsilon_decay
+        env.epis = i
         d = False
         j = 0
-        if i != 0:
-            epsilon = 1/np.floor(i/epis/20)
-        env.epis = i
         # The Q-Table learning algorithm
         while j < step_num:
             env.step_num = j
