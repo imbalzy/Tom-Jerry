@@ -11,6 +11,20 @@ def main():
     samples = 100
     iterations = 100
 
+
+    # 0. Create instance of custom environment
+
+#reward
+#pursuer
+#done +100
+# time -1
+# see +5 (try with and without)
+
+#evader
+#done -100
+#time +1
+#see -5
+
     # 1. Load Environment and Q-table structure
     env = TurtleBotTag()
     Q_p = np.zeros(env.Q_dim)
@@ -28,10 +42,6 @@ def main():
     env.RENDER_FREQ = 50000  # How often to render an episode
     env.RENDER_PLOTS = True  # whether or not to render plots
     env.SAVE_PLOTS = True  # Whether or not to save plots
-    check_stop_freq = 500
-    Q_p_old = np.array(Q_p)
-    Q_e_old = np.array(Q_e)
-    threshold = 0.001
 
     # 3. Q-learning Algorithm
     for i in range(epis):
@@ -39,12 +49,12 @@ def main():
         s_p, s_e = env.reset()
         rAll_p = 0
         rAll_e = 0
+        d = False
+        j = 0
         if i != 0:
             epsilon = 1/np.floor(i/epis/20)
         env.epis = i
-
         # The Q-Table learning algorithm
-        j = 0
         while j < step_num:
             env.step_num = j
             env.render()
@@ -58,7 +68,15 @@ def main():
                 a_p = np.random.randint(0, env.action_space.n)
                 a_e = np.random.randint(0, env.action_space.n)
 
+
+            #a_p = np.argmax(Q_p[s_p] + np.random.randn(1, env.action_space.n)*(epis/2./(i+1)))
+            #a_e = np.argmax(Q_e[s_e] + np.random.randn(1, env.action_space.n)*(epis/2./(i+1)))
+
+            #qprint("action selected:" + str(a))
+            #Get new state & reward from environment
             s1_p, s1_e, r_p, r_e, d = env.step(a_p, a_e)
+            #print("s1" + str(s1))
+            #print("Q shape" + str(Q.shape))
 
             # Update Q-Table with new knowledge
             Q_p[s_p][a_p] = Q_p[s_p][a_p] + eta*(r_p + gma*np.max(Q_p[s1_p]) - Q_p[s_p][a_p])
@@ -69,7 +87,7 @@ def main():
             s_p = s1_p
             s_e = s1_e
 
-            if d:
+            if d == True:
                 break
 
         rev_list_p.append(rAll_p)
@@ -77,23 +95,13 @@ def main():
         steps_list.append(j)
         env.render()
 
-        if i % check_stop_freq == 0 and i != 0:
-            diff_p = np.sum(Q_p - Q_p_old)
-            diff_e = np.sum(Q_e - Q_e_old)
-            Q_p_old = np.array(Q_p)
-            Q_e_old = np.array(Q_e)
-            print("p reward: {}, e reward: {}, steps: {}, diff_p: {}, diff_e: {}".format(rAll_p, rAll_e, j, diff_p, diff_e))
-            if abs(diff_p) < threshold and abs(diff_e) < threshold:
-                print("early stop")
-                break
-
     print("Pursuer Reward Sum on all episodes " + str(sum(rev_list_p)/epis))
     print("Evader Reward Sum on all episodes " + str(sum(rev_list_e)/epis))
     print("Pursuer Final Values Q-Table:\n", Q_p)
     print("Evader Final Values Q-Table:\n", Q_e)
 
     fname = env.dir_name
-    fP = open(fname + "/bestPolicyStats.txt", "w+")
+    fP = open(fname + "/bestPolicyStats.txt","w+")
     fP.write("Pursuer Final Values Q-Table:\n")
     fP.write("eta = " + str(eta) + "\n")
     fP.write("gma = " + str(gma) + "\n" )

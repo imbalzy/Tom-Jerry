@@ -19,7 +19,7 @@ def main():
     parent_dir = os.getcwd()
     directory1 = "../results/"
     dir_name = os.path.join(parent_dir, directory1)
-    folder = '29_Nov_2021_03_49_53'
+    folder = '04_May_2020_05_12_00'
     Q_p = np.load(dir_name + folder + "/bestPolicyQTableP.npy")
     Q_e = np.load(dir_name + folder + "/bestPolicyQTableE.npy")
 

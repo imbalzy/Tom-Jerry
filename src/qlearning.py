@@ -116,7 +116,7 @@ class TurtleBotTag(gym.Env):
         if e_observation != N_DISCRETE_Z - 1:
             e_reward += -2
 
-        if done:
+        if done == True:
             p_reward += 100
             e_reward += -100
         else:
