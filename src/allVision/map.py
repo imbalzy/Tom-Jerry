@@ -61,20 +61,20 @@ class Map:
         else:
             return True
 
-    def pursuerScanner(self):
-        # 0 stands for sensing the e; 1 stands for not
-        # as far as one can sense, the whole can sense.
-        return sum([p.senseRobot(self.r_e.pose) for p in self.r_p])
-
-    def evaderScanner(self):
-        # return the sensed p positions
-        ret = [0 for _ in range(self.p_num*3)]
-        sense_num = 0
-        for p in self.r_p:
-            if self.r_e.senseRobot(p.pose):
-                ret[sense_num*3:(sense_num+1)*3] = p.pose
-                sense_num += 1
-        return ret
+    # def pursuerScanner(self):
+    #     # 0 stands for sensing the e; 1 stands for not
+    #     # as far as one can sense, the whole can sense.
+    #     return sum([p.senseRobot(self.r_e.pose) for p in self.r_p])
+    #
+    # def evaderScanner(self):
+    #     # return the sensed p positions
+    #     ret = [0 for _ in range(self.p_num*3)]
+    #     sense_num = 0
+    #     for p in self.r_p:
+    #         if self.r_e.senseRobot(p.pose):
+    #             ret[sense_num*3:(sense_num+1)*3] = p.pose
+    #             sense_num += 1
+    #     return ret
 
     def haveCollided(self):
         for p in self.r_p:

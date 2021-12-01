@@ -20,8 +20,8 @@ def main():
     parent_dir = os.getcwd()
     directory1 = "../results/"
     dir_name = os.path.join(parent_dir, directory1)
-    folder = '30_Nov_2021_22_10_41'
-    env.load(dir_name + folder + "/model/p_model_epi140000", dir_name + folder + "/model/e_model_epi140000")
+    folder = '29_Nov_2021_04_29_10'
+    env.load(dir_name + folder + "/p_model_epi190000", dir_name + folder + "/e_model_epi190000")
 
     # 2. Parameters of Q-leanring
     step_num = 250
@@ -31,7 +31,7 @@ def main():
     steps_list = [] # steps per episode
     env.RENDER_FREQ = 1 # How often to render an episode
     env.RENDER_PLOTS = True # whether or not to render plots
-    env.SAVE_PLOTS = False # Whether or not to save plots
+    env.SAVE_PLOTS = True # Whether or not to save plots
 
     # 3. Q-learning Algorithm
     for i in range(epis):

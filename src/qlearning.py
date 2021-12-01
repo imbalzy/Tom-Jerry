@@ -208,6 +208,8 @@ class TurtleBotTag(gym.Env):
         # Execute one time step within the environment
         # pursuer and evader sense and then move
         # update the map with their pose
+        p_reward = 0
+        e_reward = 0
 
         p_actions = self.decodePAction(p_action)
 
@@ -220,8 +222,16 @@ class TurtleBotTag(gym.Env):
         p_poses = []
         for i, p_vel in enumerate(p_vels):
             p = self.map.r_p[i]
+            old_pose = p.pose
             p_poses += list(p.move([p_vel[0], p_vel[1]], self.map))
+            new_pose = p.pose
+            if old_pose == new_pose and p_actions[i] != 0:
+                p_reward -= 2
+        old_pose = self.map.r_e.pose
         e_pose = self.map.r_e.move([e_vel[0], e_vel[1]], self.map)
+        new_pose = self.map.r_e.pose
+        if old_pose == new_pose and e_action != 0:
+            e_reward -= 2
 
         p_observation = self.map.pursuerScanner()  # 0 is get; 1 is not
         e_observation = self.map.evaderScanner()  # [p1, p2, p3]
@@ -235,9 +245,6 @@ class TurtleBotTag(gym.Env):
         e_state = tuple(e_observation + list(e_pose))
 
         done = self.map.haveCollided()
-
-        p_reward = 0
-        e_reward = 0
 
         # reward observation of other robot
         if p_observation > 0:
@@ -295,7 +302,7 @@ class TurtleBotTag(gym.Env):
         return ret
 
     def render(self):
-        if self.PRINT_CONSOLE and self.step_num == 0 and self.epis % 10 == 0:
+        if self.PRINT_CONSOLE and self.step_num == 0 and self.epis % 100 == 0:
             print('Episode: ' + str(self.epis))
 
         if self.RENDER_PLOTS and self.epis % self.RENDER_FREQ == 0:

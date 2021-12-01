@@ -15,13 +15,13 @@ def main():
     iterations = 100
 
     # 1. Load Environment and Q-table structure
-    env = TurtleBotTag(p_num=2)
+    env = TurtleBotTag(p_num=1)
 
     parent_dir = os.getcwd()
-    directory1 = "../results/"
+    directory1 = "../../results/"
     dir_name = os.path.join(parent_dir, directory1)
-    folder = '30_Nov_2021_22_10_41'
-    env.load(dir_name + folder + "/model/p_model_epi140000", dir_name + folder + "/model/e_model_epi140000")
+    folder = '30_Nov_2021_22_43_31'
+    env.load(dir_name + folder + "/p_model_epi20000", dir_name + folder + "/e_model_epi20000")
 
     # 2. Parameters of Q-leanring
     step_num = 250

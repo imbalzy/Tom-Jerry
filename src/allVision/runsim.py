@@ -10,7 +10,7 @@ import datetime
 def main():
     samples = 100
     iterations = 100
-    p_num = 2
+    p_num = 1
 
     # 1. Load Environment and Q-table structure
     env = TurtleBotTag(p_num)
@@ -22,7 +22,7 @@ def main():
     rev_list_e = []  # rewards per episode calculate
     steps_list = []  # steps per episode
     env.RENDER_FREQ = 1000  # How often to render an episode
-    env.RENDER_PLOTS = False  # whether or not to render plots
+    env.RENDER_PLOTS = True  # whether or not to render plots
     env.SAVE_PLOTS = True  # Whether or not to save plots
 
     batch_size = 512
@@ -33,8 +33,8 @@ def main():
         s_p, s_e = env.reset()
         rAll_p = 0
         rAll_e = 0
-        # if i != 0 and env.epsilon > env.epsilon_min:
-        #         env.epsilon *= env.epsilon_decay
+        if i != 0 and env.epsilon > env.epsilon_min:
+            env.epsilon *= env.epsilon_decay
         env.epis = i
 
         # The Q-Table learning algorithm
@@ -62,8 +62,8 @@ def main():
             if len(env.e_memory) == batch_size:
                 env.replay(batch_size, 'p')
                 env.replay(batch_size, 'e')
+                env.update_target_model()
 
-        env.update_target_model()
         rev_list_p.append(rAll_p)
         rev_list_e.append(rAll_e)
         steps_list.append(j)
