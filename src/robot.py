@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import math
 
 THETALIST = [0, np.pi/2, np.pi, 3/2*np.pi]
 
@@ -72,7 +73,7 @@ class Robot:
         ang =  np.arctan2(other_pose[1]-self.pose[1], other_pose[0]-self.pose[0])
 
         if np.abs(ang - self.pose[2]) > self.fov/2:
-            return 1
+            return 0
             #return self.NUM_DISTS+1
 
         reading = np.round((dist + dist * random.gauss(0,1) * self.SENSOR_NOISE_COEF)/(self.VIEW_DIST/self.NUM_DISTS))
@@ -80,11 +81,28 @@ class Robot:
             reading = 0
         if reading > self.NUM_DISTS:
             reading = self.NUM_DISTS+1
-
+        
+        # ang1 == math.degrees(self.pose[2] - self.fov/2)
+        # ang2 == math.degrees(self.pose[2] - self.fov/4)
+        # ang3 == math.degrees(self.pose[2] + self.fov/4)
+        # ang4 == math.degrees(self.pose[2])
+        # ang5 == math.degrees(self.pose[2] + self.fov/2)
+        #print
         #return reading
         if reading < self.NUM_DISTS+1:
-            return 0
+            if ang == math.degrees(self.pose[2] - self.fov/2) or ang == math.degrees(self.pose[2] - self.fov/2) + 360:
+                return 1
+            elif ang == math.degrees(self.pose[2] - self.fov/4) or ang == math.degrees(self.pose[2] - self.fov/4) + 360:
+                return 2
+            elif ang == math.degrees(self.pose[2]) or ang == math.degrees(self.pose[2]) + 360:
+                return 3
+            elif ang == math.degrees(self.pose[2] + self.fov/4) or ang == math.degrees(self.pose[2] + self.fov/4) + 360:
+                return 4
+            elif ang == math.degrees(self.pose[2] + self.fov/2) or ang == math.degrees(self.pose[2] + self.fov/2) + 360:
+                return 5
+            else:
+                return 6     
         else:
-            return 1
+            return 0
 
 #10 substeps

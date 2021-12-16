@@ -19,7 +19,7 @@ ACTION_LIST_NAMES = ["stop", "forward", "turn_left", "turn_right", "turn_and_mov
 ACTION_LIST = [(0, 0), (1, 0), (0, -1), (0, 1), (1, -1), (1, 1)]
 N_DISCRETE_ACTIONS = len(ACTION_LIST)
 
-Z_LIST = [0, 1]
+Z_LIST = [0, 1, 2, 3, 4, 5, 6]
 N_DISCRETE_Z = len(Z_LIST)
 
 HEIGHT = 100

@@ -7,6 +7,7 @@ from robot import Robot
 from qlearning import TurtleBotTag
 import datetime
 import os
+import random
 
 def main():
 
@@ -19,14 +20,14 @@ def main():
     parent_dir = os.getcwd()
     directory1 = "../results/"
     dir_name = os.path.join(parent_dir, directory1)
-    folder = '04_May_2020_05_12_00'
+    folder = '30_Nov_2021_04_10_04'
     Q_p = np.load(dir_name + folder + "/bestPolicyQTableP.npy")
     Q_e = np.load(dir_name + folder + "/bestPolicyQTableE.npy")
 
     # 2. Parameters of Q-leanring
     eta = .01
     gma = .9
-    step_num = 250
+    step_num = 999
     epis = 2
     rev_list_p = [] # rewards per episode calculate
     rev_list_e = [] # rewards per episode calculate
@@ -51,8 +52,9 @@ def main():
             j += 1
 
             # Choose best action from Q table
-            a_p = np.argmax(Q_p[s_p])
-            a_e = np.argmax(Q_e[s_e])
+            a_p = np.random.randint(0, env.action_space.n)#np.argmax(Q_p[s_p])
+            a_e = np.argmax(Q_e[s_e])#np.random.randint(0, env.action_space.n)
+            #
 
             s1_p, s1_e, r_p, r_e, d = env.step(a_p, a_e)
 
