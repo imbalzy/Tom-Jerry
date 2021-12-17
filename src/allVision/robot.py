@@ -18,7 +18,17 @@ class Robot:
     # Sets initializes robot pose and properties
     def __init__(self, init_pose, fov):
         self.pose = init_pose
+        self.last_pose = init_pose
         # self.fov = fov
+
+    def try_move(self, vel, map):
+        new_x = self.pose[0] + vel[0]
+        new_y = self.pose[1] + vel[1]
+
+        if map.checkForObstacle(new_x, new_y):
+            return self.pose
+        else:
+            return (new_x, new_y)
 
     # Moves
     # vel = [linear, rotation]
@@ -41,8 +51,10 @@ class Robot:
         # new_or = int(np.rint(new_or))
 
         if map.checkForObstacle(new_x, new_y):
+            self.last_pose = tuple(self.pose)
             return self.pose
         else:
+            self.last_pose = tuple(self.pose)
             self.pose = (new_x, new_y)
             return self.pose
 

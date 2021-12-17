@@ -109,12 +109,12 @@ class TurtleBotTag(gym.Env):
         self.gamma = .95
         self.epsilon = 1.0
         self.epsilon_decay = 0.9999
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.001
 
         # Reset Initial Conditions
         self.reset()
 
-    def _huber_loss(self, y_true, y_pred, clip_delta=1.0):
+    def _huber_loss(self, y_true, y_pred, clip_delta=300.0):
         error = y_true - y_pred
         cond = K.abs(error) <= clip_delta
 
@@ -128,6 +128,7 @@ class TurtleBotTag(gym.Env):
         model = Sequential()
         model.add(Dense(hidden_size, input_dim=input_size, activation='relu'))
         model.add(Dense(hidden_size, activation='relu'))
+        # model.add(Dense(hidden_size, activation='relu'))
         model.add(Dense(output_size, activation='linear'))
         model.compile(loss=loss_func,
                       optimizer=Adam(learning_rate=learning_rate))
@@ -143,8 +144,12 @@ class TurtleBotTag(gym.Env):
         memory.append([np.array(state), action, reward, np.array(next_state), done])
 
     def load(self, q_name, e_name):
-        self.q_model.load_weights(q_name)
-        self.e_model.load_weights(e_name)
+        if q_name is not None:
+            self.q_model.load_weights(q_name)
+            self.q_model_target.load_weights(q_name)
+        if e_name is not None:
+            self.e_model.load_weights(e_name)
+            self.e_model_target.load_weights(e_name)
 
     def save(self, q_name, e_name):
         self.q_model.save_weights(q_name)
@@ -167,9 +172,11 @@ class TurtleBotTag(gym.Env):
             model = self.e_model
             target_model = self.e_model_target
 
+        minibatch = random.sample(memory, batch_size)
+
         states = []
         next_states = []
-        for m in memory:
+        for m in minibatch:
             states.append(m[0])
             next_states.append(m[3])
         states = np.array(states)
@@ -177,25 +184,19 @@ class TurtleBotTag(gym.Env):
         targets = model.predict(states)
         t = target_model.predict(next_states)
 
-        for i, (state, action, reward, next_state, done) in enumerate(memory):
-            # state = np.reshape(state, [-1, self.state_size])
-            # next_state = np.reshape(next_state, [-1, self.state_size])
-            # target = model.predict([state])
-            # if done:
-            #     target[0][action] = reward
-            # else:
-            #     t = target_model.predict([next_state])[0]
-            #     target[0][action] = reward + self.gamma * np.amax(t)
+
+
+        for i, (state, action, reward, next_state, done) in enumerate(minibatch):
+
+            # update in batch
             if done:
                 targets[i][action] = reward
+                targets = np.vstack([targets, targets[i], targets[i], targets[i], targets[i]])
+                states = np.vstack([states, states[i], states[i], states[i], states[i]])
             else:
                 targets[i][action] = reward + self.gamma * np.amax(t[i])
 
-            # if (role == 'p' and sum(state[0][-3:]) > 0) or (role == 'e' and sum(state[0][:-3])):
-            #     print(role, state)
-
         model.fit(states, targets, epochs=1, verbose=0)
-        memory.clear()
 
     def decodePAction(self, a):
         actions = []
@@ -203,6 +204,13 @@ class TurtleBotTag(gym.Env):
             actions.append(a % N_DISCRETE_ACTIONS)
             a = a // N_DISCRETE_ACTIONS
         return actions
+
+    def encodePAction(self, actions):
+        res = 0
+        for i in reversed(range(len(actions))):
+            a = actions[i]
+            res = res * N_DISCRETE_ACTIONS + a
+        return res
 
     def step(self, p_action, e_action):
         # Execute one time step within the environment
@@ -222,8 +230,8 @@ class TurtleBotTag(gym.Env):
         e_old_pose = tuple(self.map.r_e.pose)
         e_pose = self.map.r_e.move([e_vel[0], e_vel[1]], self.map)
         e_new_pose = tuple(self.map.r_e.pose)
-        if e_old_pose == e_new_pose and e_action != 0:
-            e_reward -= 2
+        if e_old_pose == e_new_pose:
+            e_reward -= 20
 
         p_poses = []
         closest_p_pose = -1
@@ -233,24 +241,24 @@ class TurtleBotTag(gym.Env):
             p_old_pose = tuple(p.pose)
             p_poses += list(p.move([p_vel[0], p_vel[1]], self.map))
             p_new_pose = tuple(p.pose)
-            if p_old_pose == p_new_pose and p_actions[i] != 0:
-                p_reward -= 2
+            if p_old_pose == p_new_pose:
+                p_reward -= 20
 
             # p dist reward
-            p_reward += self.map.dist[e_old_pose][p_old_pose] - self.map.dist[e_old_pose][p_new_pose]
+            p_reward += 4*(self.map.dist[e_old_pose][p_old_pose] - self.map.dist[e_old_pose][p_new_pose])
 
             if self.map.dist[e_old_pose][p_old_pose] < minDist:
                 minDist = self.map.dist[e_old_pose][p_old_pose]
-                closest_p_pose = p_old_pose
+                closest_p_pose = tuple(p_old_pose)
 
         # e dist reward
-        e_reward += self.map.dist[e_new_pose][closest_p_pose] - self.map.dist[e_old_pose][closest_p_pose]
+        e_reward += 4*(self.map.dist[e_new_pose][closest_p_pose] - self.map.dist[e_old_pose][closest_p_pose])
 
         # p_observation = self.map.pursuerScanner()  # 0 is get; 1 is not
         # e_observation = self.map.evaderScanner()  # [p1, p2, p3]
 
         p_state = tuple(p_poses + list(e_pose))
-        e_state = p_state
+        e_state = tuple(p_state)
 
         done = self.map.haveCollided()
 
@@ -261,13 +269,36 @@ class TurtleBotTag(gym.Env):
         #     e_reward += -2
 
         if done:
-            p_reward += 100
-            e_reward += -100
+            p_reward += 1000
+            e_reward += -1000
         else:
-            p_reward += -1
-            e_reward += 1
+            p_reward += -2
+            e_reward += 2
 
         return p_state, e_state, p_reward, e_reward, done
+
+    def try_step(self, p_action, e_action):
+        # Execute one time step within the environment
+        # pursuer and evader sense and then move
+        # update the map with their pose
+        p_reward = 0
+        e_reward = 0
+
+        p_actions = self.decodePAction(p_action)
+
+        p_vels = []
+        for p_action in p_actions:
+            p_vels.append(ACTION_LIST[p_action])
+        e_vel = ACTION_LIST[e_action]
+
+        e_pose = self.map.r_e.try_move([e_vel[0], e_vel[1]], self.map)
+
+        p_poses = []
+        for i, p_vel in enumerate(p_vels):
+            p = self.map.r_p[i]
+            p_poses.append(list(p.try_move([p_vel[0], p_vel[1]], self.map)))
+
+        return p_poses, e_pose
 
     def reset(self):
         # Reset the state of the environment to an initial state
@@ -276,14 +307,16 @@ class TurtleBotTag(gym.Env):
         poses = self.generateRandomPos(self.map.p_num + 1)
         p_poses = []
         for i, p in enumerate(self.map.r_p):
-            p.pose = poses[i]
+            p.last_pose = p.pose
+            p.pose = tuple(poses[i])
             p_poses += list(p.pose)
+        self.map.r_e.last_pose = self.map.r_e.pose
         self.map.r_e.pose = tuple(poses[-1])  # numpy random (x, y, theta)
         # self.p_observation = self.map.pursuerScanner()
         # self.e_observation = self.map.evaderScanner()
 
         p_state = tuple(p_poses + list(self.map.r_e.pose))
-        e_state = p_state
+        e_state = tuple(p_state)
         return p_state, e_state
 
     # define states as state =  (y, x, theta)
@@ -308,33 +341,19 @@ class TurtleBotTag(gym.Env):
 
     def render(self):
         if self.PRINT_CONSOLE and self.step_num == 0 and self.epis % 100 == 0:
-            print('Episode: ' + str(self.epis))
+            print('Episode: ' + str(self.epis) + ' Epsilon: ', str(self.epsilon))
 
         if self.RENDER_PLOTS and self.epis % self.RENDER_FREQ == 0:
             # Render the environment to the screen
             plt.cla()
             plt.imshow(self.map.grid, origin='lower')
 
-            # patches = []
             for p in self.map.r_p:
                 plt.plot(p.pose[0], p.pose[1], 'bo', label='Pursuer')
-                # p_theta1 = 180 / np.pi * (p.THETALIST[p.pose[2]] - p.fov / 2)
-                # p_theta2 = 180 / np.pi * (p.THETALIST[p.pose[2]] + p.fov / 2)
-                # p_wedge = Wedge((p.pose[0], p.pose[1]), p.VIEW_DIST, p_theta1,
-                #                 p_theta2, facecolor='b')
-                # patches.append(p_wedge)
-            #
+
             plt.plot(self.map.r_e.pose[0], self.map.r_e.pose[1], 'ro', label='Evader')
-            #
-            # e_theta1 = 180 / np.pi * (self.map.r_e.THETALIST[self.map.r_e.pose[2]] - self.map.r_e.fov / 2)
-            # e_theta2 = 180 / np.pi * (self.map.r_e.THETALIST[self.map.r_e.pose[2]] + self.map.r_e.fov / 2)
-            # e_wedge = Wedge((self.map.r_e.pose[0], self.map.r_e.pose[1]), self.map.r_e.VIEW_DIST, e_theta1, e_theta2,
-            #                 facecolor='r')
-            # patches.append(e_wedge)
-            #
-            # p = PatchCollection(patches, alpha=0.8)
+
             ax = plt.gca()
-            # ax.add_collection(p)
 
             plt.legend(loc='lower left')
             plt.title('Episode: ' + str(self.epis) + '    Step: ' + str(self.step_num))
@@ -345,3 +364,77 @@ class TurtleBotTag(gym.Env):
                 fname = self.dir_name_plots + '/epis' + str(self.epis).zfill(5) + '_step' + str(self.step_num).zfill(5)
                 plt.savefig(fname)
             plt.pause(0.005)
+
+    def plot_p_policy(self):
+        # Render the environment to the screen
+        plt.cla()
+        plt.imshow(self.map.grid, origin='lower')
+
+        # for p in self.map.r_p:
+        #     plt.plot(p.pose[0], p.pose[1], 'bo', label='Pursuer')
+
+        plt.plot(self.map.r_e.pose[0], self.map.r_e.pose[1], 'ro', label='Evader')
+
+        for i in range(len(self.map.grid)):
+            for j in range(len(self.map.grid[0])):
+                if self.map.grid[i][j] == 1:
+                    continue
+
+                # model
+                q_state = tuple([i, j, self.map.r_e.pose[0], self.map.r_e.pose[1]])
+                q_action_values = self.q_model.predict(np.expand_dims(np.asarray(q_state), axis=0))
+                action = np.argmax(q_action_values[0])
+
+                dx, dy = ACTION_LIST[action]
+                startx, starty = i - dx / 3, j - dy / 3
+                if action == 0:
+                    continue
+                else:
+                    plt.arrow(startx, starty, dx/2, dy/2, width=0.05, color='b')
+
+        ax = plt.gca()
+
+        plt.legend(loc='lower left')
+
+        plt.draw()
+        if self.SAVE_PLOTS:
+            fname = self.dir_name_plots + '/epis' + str(self.epis).zfill(5) + '_step' + str(self.step_num).zfill(5)
+            plt.savefig(fname)
+
+
+    def plot_e_policy(self):
+        # Render the environment to the screen
+        self.map.r_p[0].pose = tuple([3, 3])
+        plt.cla()
+        plt.imshow(self.map.grid, origin='lower')
+
+        for p in self.map.r_p:
+            plt.plot(p.pose[0], p.pose[1], 'bo', label='Pursuer')
+
+        # plt.plot(self.map.r_e.pose[0], self.map.r_e.pose[1], 'ro', label='Evader')
+
+        for i in range(len(self.map.grid)):
+            for j in range(len(self.map.grid[0])):
+                if self.map.grid[i][j] == 1:
+                    continue
+
+                # # model
+                q_state = tuple([i, j, self.map.r_e.pose[0], self.map.r_e.pose[1]])
+                q_action_values = self.q_model.predict(np.expand_dims(np.asarray(q_state), axis=0))
+                action = np.argmax(q_action_values[0])
+
+                dx, dy = ACTION_LIST[action]
+                startx, starty = i - dx / 3, j - dy / 3
+                if action == 0:
+                    plt.text(i, j, 'o', color='r')
+                else:
+                    plt.arrow(startx, starty, dx/2, dy/2, width=0.05, color='r')
+
+        ax = plt.gca()
+
+        plt.legend(loc='lower left')
+
+        plt.draw()
+        if self.SAVE_PLOTS:
+            fname = self.dir_name_plots + '/epis' + str(self.epis).zfill(5) + '_step' + str(self.step_num).zfill(5)
+            plt.savefig(fname)

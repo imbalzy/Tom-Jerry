@@ -7,25 +7,37 @@ from robot import Robot
 from qlearning import TurtleBotTag
 import datetime
 import os
+import random
 
 
 def main():
 
     samples = 100
     iterations = 100
+    p_random = False
+    e_random = True
+    # 7.58
+    # 52.35
+    # 74.69
 
     # 1. Load Environment and Q-table structure
-    env = TurtleBotTag(p_num=1)
+    env = TurtleBotTag(p_num=2)
 
     parent_dir = os.getcwd()
     directory1 = "../../results/"
     dir_name = os.path.join(parent_dir, directory1)
-    folder = '30_Nov_2021_22_43_31'
-    env.load(dir_name + folder + "/p_model_epi20000", dir_name + folder + "/e_model_epi20000")
+    # 1 p 1 e
+    folder = '02_Dec_2021_02_21_51'
+    # 2 p 1 e
+    folder = '16_Dec_2021_05_06_15'
+    folder += '/model_allVision'
+    p_file = dir_name + folder + "/p_model_epi6000"
+    e_file = dir_name + folder + "/e_model_epi6000"
+    env.load(p_file, e_file)
 
     # 2. Parameters of Q-leanring
-    step_num = 250
-    epis = 2
+    step_num = 100
+    epis = 10
     rev_list_p = [] # rewards per episode calculate
     rev_list_e = [] # rewards per episode calculate
     steps_list = [] # steps per episode
@@ -49,9 +61,31 @@ def main():
             env.render()
             j += 1
 
-            # Choose best action from Q table
+            # try move with act
             a_p, a_e = env.act(s_p, s_e)
-            print(a_p, a_e)
+            p_next_poses, e_next_pose = env.try_step(a_p, a_e)
+
+            p_actions = env.decodePAction(a_p)
+            new_p_actions = []
+            for idx, p in enumerate(env.map.r_p):
+                # print(p.last_pose, p.pose, tuple(p_next_poses[idx]))
+                if tuple(p.last_pose) == tuple(p.pose) == tuple(p_next_poses[idx]):
+                    new_p_actions.append(random.randrange(env.e_action_dim))
+                else:
+                    new_p_actions.append(p_actions[idx])
+            # new a_p
+            if p_random:
+                a_p = random.randrange(env.q_action_dim)
+            else:
+                a_p = env.encodePAction(new_p_actions)
+            # new a_e
+            if e_random:
+                a_e = random.randrange(env.e_action_dim)
+            else:
+                if tuple(env.map.r_e.pose) == tuple(env.map.r_e.last_pose) == tuple(e_next_pose):
+                    a_e = random.randrange(env.e_action_dim)
+
+            # print(a_p, a_e)
 
             s1_p, s1_e, r_p, r_e, d = env.step(a_p, a_e)
 
@@ -63,10 +97,14 @@ def main():
             if d:
                 break
 
+        print(i)
+
         rev_list_p.append(rAll_p)
         rev_list_e.append(rAll_p)
         steps_list.append(j)
         env.render()
+
+    print(sum(steps_list) / len(steps_list))
 
     # print("Pursuer Reward Sum on all episodes " + str(sum(rev_list_p)/epis))
     # print("Evader Reward Sum on all episodes " + str(sum(rev_list_e)/epis))

@@ -1,8 +1,8 @@
 clear all;
 close all;
 
-folder = '04_May_2020_17_59_56';
-epis_num = '00009';
+folder = '02_Dec_2021_03_14_05';
+epis_num = '00001';
 
 path = ['../results/' folder  '/figures'];
 save_path = ['../results/' folder  '/video/'];

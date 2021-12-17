@@ -5,13 +5,16 @@ import matplotlib.pyplot as plt
 import scipy.signal as sig
 
 # CHANGE:
-dir = "../results/04_May_2020_05_12_00/"
+# 1 p 1 e
+# dir = "../results/02_Dec_2021_02_21_51/"
+# 2 p 1 e
+dir = '../results/16_Dec_2021_05_06_15/'
 
 rev_list_e = np.loadtxt(dir + "RevListE.txt")
 rev_list_p = np.loadtxt(dir + "RevListP.txt")
 steps_list = np.loadtxt(dir + "StepsList.txt")
 
-kernel_list = [1, 9, 21, 51, 101]
+kernel_list = [1, 9, 21, 51, 101, 501]
 
 for k in kernel_list:
     rev_e_smooth = sig.medfilt(rev_list_e, kernel_size=k)
@@ -31,6 +34,7 @@ for k in kernel_list:
     plt.title('Evader')
     plt.xlabel('Episode Number')
     plt.ylabel('Reward Amount')
+
 
     plt.figure()
     plt.plot(steps_smooth, '.', label="# of Steps")
